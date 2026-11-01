@@ -1,0 +1,25 @@
+name: Zepp devkit setup
+description: >-
+  Make the devkit's scripts available to later steps, for projects that call them in a
+  loop (one per watch face): sets ZEPP_DEVKIT to this checkout of the devkit, installs
+  the QR tools, and Zeus if it isn't on the PATH. Then, for example:
+  "$ZEPP_DEVKIT/preview/zeus_preview.sh" <project> <out> "<watches>" [label]
+  (with the ZEPP_* login in its env; it exits 1 when no preview was made).
+
+inputs:
+  zeus-version:
+    description: Zeus CLI version, installed if `zeus` isn't on the PATH.
+    default: "1.9.3"
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        ZEUS_VERSION: ${{ inputs.zeus-version }}
+      run: |
+        root="$(cd "$GITHUB_ACTION_PATH/.." && pwd)"
+        echo "ZEPP_DEVKIT=$root" >> "$GITHUB_ENV"
+        command -v zeus >/dev/null || npm install -g "@zeppos/zeus-cli@$ZEUS_VERSION"
+        python3 -c "import qrcode, PIL" 2>/dev/null || pip install -q -r "$root/preview/requirements.txt"
+        echo "zepp-devkit at $root"

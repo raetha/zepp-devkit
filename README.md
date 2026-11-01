@@ -12,6 +12,7 @@ what order, is in [docs/plan.md](docs/plan.md).
 | Path | What it is |
 | --- | --- |
 | `preview/` | A GitHub Action: upload a project with the real `zeus preview`, so the iPhone Zepp app lists it under Developer Mode, and write its QR code. |
+| `setup/` | A GitHub Action that sets `ZEPP_DEVKIT` to the devkit's folder, for projects that call its scripts in a loop (one per watch face). |
 | `preview-check/` | A GitHub Action for scheduled runs: fail when a preview didn't upload (an expired Zepp login). |
 | `test/` | Tests for the scripts, with a fake Zeus (no network, no login). |
 
@@ -54,7 +55,7 @@ jobs:
           build-result: ${{ needs.build.result }}
 ```
 
-`preview` writes `preview-url.txt`, `preview-qr.png` and `preview-expires.txt` into `out`, and never fails the step: when no preview was made (no login, an expired login, Zeus gave no QR code) its `failed` output says why, with an annotation. A project calling it more than once (one per watch face) joins the `failed` outputs. Schedules run the default branch's copy of a workflow.
+`preview` writes `preview-url.txt`, `preview-qr.png` and `preview-expires.txt` into `out`, and never fails the step: when no preview was made (no login, an expired login, Zeus gave no QR code) its `failed` output says why, with an annotation. For several projects in one job (one per watch face), use `setup` once and call `"$ZEPP_DEVKIT/preview/zeus_preview.sh" <project> <out> "<watches>" [label]` in the loop (with the `ZEPP_*` env on that step): it exits 1 when no preview was made, and the loop collects the failures into the job's output for `preview-check`. Schedules run the default branch's copy of a workflow.
 
 ### What the preview does, and why
 

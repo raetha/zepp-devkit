@@ -36,3 +36,9 @@ jobs:
 
       - name: Preview script tests
         run: bash test/preview.test.sh
+
+      - name: The setup action finds the scripts
+        uses: ./setup
+
+      - name: ZEPP_DEVKIT points here
+        run: test -x "$ZEPP_DEVKIT/preview/zeus_preview.sh"
