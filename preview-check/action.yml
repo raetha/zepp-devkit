@@ -1,0 +1,34 @@
+name: Zepp preview check
+description: >-
+  For scheduled runs that exist to keep test builds' previews valid (they expire after 7
+  days): fail when the build failed or a preview didn't upload, so GitHub emails the
+  owner. An expired Zepp login is the usual cause.
+
+inputs:
+  failed:
+    description: The preview action's `failed` output(s), joined (empty when every upload worked).
+    default: ""
+  build-result:
+    description: The result of the job that ran the uploads (needs.<job>.result).
+    required: true
+  repositories:
+    description: Where the ZEPP_* secrets are set, for the error message.
+    default: "this repository"
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        FAILED: ${{ inputs.failed }}
+        BUILD: ${{ inputs.build-result }}
+        REPOS: ${{ inputs.repositories }}
+      run: |
+        if [ "$BUILD" != success ]; then
+          echo "::error title=Zepp preview::the build failed, so the test builds weren't refreshed"; exit 1
+        fi
+        if [ -n "$FAILED" ]; then
+          echo "::error title=Zepp preview::$FAILED. If the log says the login expired, get new values (zepp-devkit README -> \"The Zepp login\") and update ZEPP_APPTOKEN, ZEPP_USERID and ZEPP_CNAME in $REPOS."
+          exit 1
+        fi
+        echo "previews refreshed"

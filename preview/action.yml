@@ -1,0 +1,77 @@
+name: Zepp preview upload
+description: >-
+  Upload a Zepp OS project to Zepp's preview service with the real `zeus preview`, so the
+  iPhone Zepp app lists it under Developer Mode, and write its QR code. Never fails the
+  step: a failed upload is a warning, reported in the `failed` output (feed it to the
+  `preview-check` action on scheduled runs). Pass the Zepp login as env on this step:
+  ZEPP_APPTOKEN, ZEPP_USERID, ZEPP_CNAME (from repository secrets).
+
+inputs:
+  project:
+    description: The Zeus project folder (holds app.json), usually the DEV variant.
+    required: true
+  out:
+    description: Folder for preview-url.txt, preview-qr.png and preview-expires.txt.
+    required: true
+  watches:
+    description: Zeus device names, comma-separated (e.g. "Amazfit Balance 3,Amazfit Balance 3 Ti").
+    required: true
+  label:
+    description: Name in annotations (default the project folder's name).
+    default: ""
+  qr-color:
+    description: The QR code's colour.
+    default: "#14223A"
+  zeus-version:
+    description: Zeus CLI version, installed if `zeus` isn't on the PATH.
+    default: "1.9.3"
+  timeout:
+    description: Seconds before giving up on Zeus (an expired login waits for a browser forever).
+    default: "600"
+
+outputs:
+  url:
+    description: The preview's QR code URL (empty when it failed).
+    value: ${{ steps.up.outputs.url }}
+  expires:
+    description: When the QR code expires (UTC).
+    value: ${{ steps.up.outputs.expires }}
+  failed:
+    description: Why no preview was made (empty when it was).
+    value: ${{ steps.up.outputs.failed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Zeus and QR tools
+      shell: bash
+      env:
+        ZEUS_VERSION: ${{ inputs.zeus-version }}
+      run: |
+        command -v zeus >/dev/null || npm install -g "@zeppos/zeus-cli@$ZEUS_VERSION"
+        python3 -c "import qrcode, PIL" 2>/dev/null || pip install -q -r "$GITHUB_ACTION_PATH/requirements.txt"
+
+    - name: Upload the preview
+      id: up
+      shell: bash
+      env:
+        PROJECT: ${{ inputs.project }}
+        OUT: ${{ inputs.out }}
+        WATCHES: ${{ inputs.watches }}
+        LABEL: ${{ inputs.label }}
+        QR_COLOR: ${{ inputs.qr-color }}
+        ZEUS_TIMEOUT: ${{ inputs.timeout }}
+      run: |
+        label="${LABEL:-$(basename "$PROJECT")}"
+        if [ -z "${ZEPP_APPTOKEN:-}" ] || [ -z "${ZEPP_USERID:-}" ] || [ -z "${ZEPP_CNAME:-}" ]; then
+          echo "No ZEPP_* login: no preview upload for $label"
+          echo "failed=$label: no ZEPP_* secrets" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        if "$GITHUB_ACTION_PATH/zeus_preview.sh" "$PROJECT" "$OUT" "$WATCHES" "$label"; then
+          echo "url=$(cat "$OUT/preview-url.txt")" >> "$GITHUB_OUTPUT"
+          echo "expires=$(cat "$OUT/preview-expires.txt")" >> "$GITHUB_OUTPUT"
+        else
+          echo "::warning title=Zepp preview ($label)::upload failed (see the annotation above)"
+          echo "failed=$label: the preview upload failed" >> "$GITHUB_OUTPUT"
+        fi

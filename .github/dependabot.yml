@@ -1,0 +1,13 @@
+# Keeps CI actions and the tools' dependencies up to date (weekly pull requests into dev).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+  - package-ecosystem: pip
+    directory: /preview
+    target-branch: dev
+    schedule:
+      interval: weekly
