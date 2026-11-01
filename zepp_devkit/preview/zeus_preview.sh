@@ -2,7 +2,7 @@
 # Upload a test build to Zepp's preview service with the real `zeus preview`: the only kind
 # of install the iPhone Zepp app lists under Developer Mode (and gives an app's Settings
 # page). Zeus builds the package itself, in preview mode (no intermediate products), for
-# the given watches only. Used by the `preview` action (preview/action.yml).
+# the given watches only. Run by `zepp-devkit preview` (and the `preview` action).
 #
 #   zeus_preview.sh <project dir> <out dir> "<Zeus device names, comma-separated>" [label]
 #
@@ -13,7 +13,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 proj="$1"; out="$2"; devices="$3"; label="${4:-$(basename "$proj")}"
 mkdir -p "$out"
-# shellcheck source=preview/zeus_login.sh
+# shellcheck source=zepp_devkit/preview/zeus_login.sh
 source "$here/zeus_login.sh"
 log="$(mktemp)"
 # no terminal: an expired login would wait for a browser forever, hence the timeout;
@@ -34,5 +34,5 @@ rm -f "$log"
 echo "$url" > "$out/preview-url.txt"
 # Zeus says a preview's QR code is valid for 7 days
 date -u -d '+7 days' '+%Y-%m-%d %H:%M UTC' > "$out/preview-expires.txt"
-python3 "$here/qr.py" "$out/preview-qr.png" "$url" "${QR_COLOR:-#14223A}"
+"${PYTHON:-python3}" -m zepp_devkit.cli qr "$out/preview-qr.png" "$url" --color "${QR_COLOR:-#14223A}" >/dev/null
 echo "preview uploaded ($label, $devices): expires $(cat "$out/preview-expires.txt")"

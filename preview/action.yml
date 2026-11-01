@@ -4,7 +4,8 @@ description: >-
   iPhone Zepp app lists it under Developer Mode, and write its QR code. Never fails the
   step: a failed upload is a warning, reported in the `failed` output (feed it to the
   `preview-check` action on scheduled runs). Pass the Zepp login as env on this step:
-  ZEPP_APPTOKEN, ZEPP_USERID, ZEPP_CNAME (from repository secrets).
+  ZEPP_APPTOKEN, ZEPP_USERID, ZEPP_CNAME (from repository secrets). Projects that install
+  the devkit themselves can run `zepp-devkit preview ... --github` instead.
 
 inputs:
   project:
@@ -43,13 +44,15 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Zeus and QR tools
+    # (a composite action's `uses: ./x` means the caller's repository, so the setup is spelled out)
+    - name: The devkit and Zeus
       shell: bash
       env:
         ZEUS_VERSION: ${{ inputs.zeus-version }}
       run: |
         command -v zeus >/dev/null || npm install -g "@zeppos/zeus-cli@$ZEUS_VERSION"
-        python3 -c "import qrcode, PIL" 2>/dev/null || pip install -q -r "$GITHUB_ACTION_PATH/requirements.txt"
+        command -v zepp-devkit >/dev/null || python3 -m pip install -q "$GITHUB_ACTION_PATH/.." 2>/dev/null \
+          || python3 -m pip install -q --break-system-packages "$GITHUB_ACTION_PATH/.."
 
     - name: Upload the preview
       id: up
@@ -60,18 +63,5 @@ runs:
         WATCHES: ${{ inputs.watches }}
         LABEL: ${{ inputs.label }}
         QR_COLOR: ${{ inputs.qr-color }}
-        ZEUS_TIMEOUT: ${{ inputs.timeout }}
-      run: |
-        label="${LABEL:-$(basename "$PROJECT")}"
-        if [ -z "${ZEPP_APPTOKEN:-}" ] || [ -z "${ZEPP_USERID:-}" ] || [ -z "${ZEPP_CNAME:-}" ]; then
-          echo "No ZEPP_* login: no preview upload for $label"
-          echo "failed=$label: no ZEPP_* secrets" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-        if "$GITHUB_ACTION_PATH/zeus_preview.sh" "$PROJECT" "$OUT" "$WATCHES" "$label"; then
-          echo "url=$(cat "$OUT/preview-url.txt")" >> "$GITHUB_OUTPUT"
-          echo "expires=$(cat "$OUT/preview-expires.txt")" >> "$GITHUB_OUTPUT"
-        else
-          echo "::warning title=Zepp preview ($label)::upload failed (see the annotation above)"
-          echo "failed=$label: the preview upload failed" >> "$GITHUB_OUTPUT"
-        fi
+        TIMEOUT: ${{ inputs.timeout }}
+      run: zepp-devkit preview "$PROJECT" "$OUT" --watches "$WATCHES" --label "$LABEL" --color "$QR_COLOR" --timeout "$TIMEOUT" --github

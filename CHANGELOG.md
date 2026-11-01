@@ -9,6 +9,13 @@ All notable changes to the Zepp devkit. The format is based on
 
 ### Added
 
-- `preview`: upload a Zepp OS project with the real `zeus preview`, so the iPhone Zepp app lists it under Developer Mode (and gives an app its Settings page), and write its QR code, URL and expiry. A failed upload is a warning, reported in its `failed` output. From raetha/zepp-kestrel and raetha/zepp-watch-faces.
-- `setup`: sets `ZEPP_DEVKIT` for projects that call the scripts in a loop (one per watch face), and installs Zeus and the QR tools.
-- `preview-check`: fails a scheduled run when a preview didn't upload, so an expired Zepp login gets noticed.
+- `zepp-devkit`, a Python package and command, pinned once in a project's requirements:
+  - `dev-variant`: a side-by-side DEV copy with a registered DEV app ID, the version `X.Y.Z-dev.N` and, optionally, that version stamped into other files.
+  - `preview` and `preview-check`: upload with the real `zeus preview`, so the iPhone Zepp app lists the build under Developer Mode (and gives an app its Settings page); fail scheduled runs whose uploads failed, so an expired Zepp login gets noticed.
+  - `release-plan`, `changelog` and `notes`: releases from Keep a Changelog files, for the components listed in `zepp-devkit.json`, and dev pre-release notes; `to_html()` for install pages.
+  - `extract-zpk`, `packages` and `qr`: one watch's `.zpk`, one `.zpk` per screen with `packages.json`, `zpkd1://` QR codes; `picker()` for an install page's watch list.
+  - `store-images`: the Zepp store's 360×360 screenshots (round or square) and 240×240 icon.
+  - `emu`: the Zepp OS emulator for apps and watch faces.
+- GitHub Actions wrapping it: `preview`, `preview-check` and `setup`.
+
+Moved from raetha/zepp-kestrel and raetha/zepp-watch-faces, taking the better of each version.

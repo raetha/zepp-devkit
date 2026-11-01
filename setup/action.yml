@@ -1,12 +1,15 @@
 name: Zepp devkit setup
 description: >-
-  Make the devkit's scripts available to later steps, for projects that call them in a
-  loop (one per watch face): sets ZEPP_DEVKIT to this checkout of the devkit, installs
-  the QR tools, and Zeus if it isn't on the PATH. Then, for example:
-  "$ZEPP_DEVKIT/preview/zeus_preview.sh" <project> <out> "<watches>" [label]
-  (with the ZEPP_* login in its env; it exits 1 when no preview was made).
+  Install the devkit for later steps, at the commit this action is pinned to: the
+  `zepp-devkit` command (DEV variants, previews, release plans and notes, packages, QR
+  codes, store images, the emulator), ZEPP_DEVKIT pointing at this checkout, and Zeus if it
+  isn't on the PATH. Projects that pin the devkit in their own requirements (pip) don't
+  need this.
 
 inputs:
+  zeus:
+    description: Install Zeus when it isn't on the PATH ("false" for jobs that only need the command).
+    default: "true"
   zeus-version:
     description: Zeus CLI version, installed if `zeus` isn't on the PATH.
     default: "1.9.3"
@@ -16,10 +19,12 @@ runs:
   steps:
     - shell: bash
       env:
+        ZEUS: ${{ inputs.zeus }}
         ZEUS_VERSION: ${{ inputs.zeus-version }}
       run: |
         root="$(cd "$GITHUB_ACTION_PATH/.." && pwd)"
         echo "ZEPP_DEVKIT=$root" >> "$GITHUB_ENV"
-        command -v zeus >/dev/null || npm install -g "@zeppos/zeus-cli@$ZEUS_VERSION"
-        python3 -c "import qrcode, PIL" 2>/dev/null || pip install -q -r "$root/preview/requirements.txt"
-        echo "zepp-devkit at $root"
+        [ "$ZEUS" != true ] || command -v zeus >/dev/null || npm install -g "@zeppos/zeus-cli@$ZEUS_VERSION"
+        # system Pythons (no setup-python) refuse plain pip installs (PEP 668)
+        python3 -m pip install -q "$root" 2>/dev/null || python3 -m pip install -q --break-system-packages "$root"
+        echo "zepp-devkit $(python3 -c 'import zepp_devkit; print(zepp_devkit.__version__)') at $root"

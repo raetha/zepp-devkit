@@ -25,14 +25,19 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Tools
-        run: pip install -r preview/requirements.txt
-
       - name: shellcheck
-        run: shellcheck -x preview/*.sh test/*.sh
+        run: shellcheck -x zepp_devkit/preview/*.sh test/*.sh
 
       - name: Python compiles
-        run: python3 -m py_compile preview/*.py
+        run: python3 -m py_compile zepp_devkit/*.py zepp_devkit/*/*.py
+
+      - name: Package tests
+        run: |
+          pip install -e . pytest
+          pytest -q tests
+
+      - name: The emulator tool parses
+        run: node --check zepp_devkit/emu/emu.mjs
 
       - name: Preview script tests
         run: bash test/preview.test.sh
@@ -40,5 +45,7 @@ jobs:
       - name: The setup action finds the scripts
         uses: ./setup
 
-      - name: ZEPP_DEVKIT points here
-        run: test -x "$ZEPP_DEVKIT/preview/zeus_preview.sh"
+      - name: ZEPP_DEVKIT points here, and the command works
+        run: |
+          test -f "$(zepp-devkit path)/preview/zeus_preview.sh"
+          zepp-devkit path

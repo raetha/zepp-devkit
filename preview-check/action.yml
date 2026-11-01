@@ -18,17 +18,15 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: The devkit
+      shell: bash
+      run: |
+        command -v zepp-devkit >/dev/null || python3 -m pip install -q "$GITHUB_ACTION_PATH/.." 2>/dev/null \
+          || python3 -m pip install -q --break-system-packages "$GITHUB_ACTION_PATH/.."
+
     - shell: bash
       env:
         FAILED: ${{ inputs.failed }}
         BUILD: ${{ inputs.build-result }}
         REPOS: ${{ inputs.repositories }}
-      run: |
-        if [ "$BUILD" != success ]; then
-          echo "::error title=Zepp preview::the build failed, so the test builds weren't refreshed"; exit 1
-        fi
-        if [ -n "$FAILED" ]; then
-          echo "::error title=Zepp preview::$FAILED. If the log says the login expired, get new values (zepp-devkit README -> \"The Zepp login\") and update ZEPP_APPTOKEN, ZEPP_USERID and ZEPP_CNAME in $REPOS."
-          exit 1
-        fi
-        echo "previews refreshed"
+      run: zepp-devkit preview-check --build-result "$BUILD" --failed "$FAILED" --repositories "$REPOS"
