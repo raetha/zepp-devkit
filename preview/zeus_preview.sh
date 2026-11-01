@@ -13,7 +13,7 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 proj="$1"; out="$2"; devices="$3"; label="${4:-$(basename "$proj")}"
 mkdir -p "$out"
-# shellcheck source=zeus_login.sh
+# shellcheck source=preview/zeus_login.sh
 source "$here/zeus_login.sh"
 log="$(mktemp)"
 # no terminal: an expired login would wait for a browser forever, hence the timeout;

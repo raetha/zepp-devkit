@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Sourced by zeus_preview.sh: put the Zepp developer login (ZEPP_APPTOKEN, ZEPP_USERID,
 # ZEPP_CNAME; README -> "The Zepp login") into Zeus's own login file (~/.zepp/.zeus), as
 # `zeus login` would, only until the script ends.
