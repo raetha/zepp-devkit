@@ -1,0 +1,67 @@
+name: Zepp preview upload
+description: >-
+  Upload a Zepp OS project to Zepp's preview service with the real `zeus preview`, so the
+  iPhone Zepp app lists it under Developer Mode, and write its QR code. Never fails the
+  step: a failed upload is a warning, reported in the `failed` output (feed it to the
+  `preview-check` action on scheduled runs). Pass the Zepp login as env on this step:
+  ZEPP_APPTOKEN, ZEPP_USERID, ZEPP_CNAME (from repository secrets). Projects that install
+  the devkit themselves can run `zepp-devkit preview ... --github` instead.
+
+inputs:
+  project:
+    description: The Zeus project folder (holds app.json), usually the DEV variant.
+    required: true
+  out:
+    description: Folder for preview-url.txt, preview-qr.png and preview-expires.txt.
+    required: true
+  watches:
+    description: Zeus device names, comma-separated (e.g. "Amazfit Balance 3,Amazfit Balance 3 Ti").
+    required: true
+  label:
+    description: Name in annotations (default the project folder's name).
+    default: ""
+  qr-color:
+    description: The QR code's colour.
+    default: "#14223A"
+  zeus-version:
+    description: Zeus CLI version, installed if `zeus` isn't on the PATH.
+    default: "1.9.3"
+  timeout:
+    description: Seconds before giving up on Zeus (an expired login waits for a browser forever).
+    default: "600"
+
+outputs:
+  url:
+    description: The preview's QR code URL (empty when it failed).
+    value: ${{ steps.up.outputs.url }}
+  expires:
+    description: When the QR code expires (UTC).
+    value: ${{ steps.up.outputs.expires }}
+  failed:
+    description: Why no preview was made (empty when it was).
+    value: ${{ steps.up.outputs.failed }}
+
+runs:
+  using: composite
+  steps:
+    # (a composite action's `uses: ./x` means the caller's repository, so the setup is spelled out)
+    - name: The devkit and Zeus
+      shell: bash
+      env:
+        ZEUS_VERSION: ${{ inputs.zeus-version }}
+      run: |
+        command -v zeus >/dev/null || npm install -g "@zeppos/zeus-cli@$ZEUS_VERSION"
+        command -v zepp-devkit >/dev/null || python3 -m pip install -q "$GITHUB_ACTION_PATH/.." 2>/dev/null \
+          || python3 -m pip install -q --break-system-packages "$GITHUB_ACTION_PATH/.."
+
+    - name: Upload the preview
+      id: up
+      shell: bash
+      env:
+        PROJECT: ${{ inputs.project }}
+        OUT: ${{ inputs.out }}
+        WATCHES: ${{ inputs.watches }}
+        LABEL: ${{ inputs.label }}
+        QR_COLOR: ${{ inputs.qr-color }}
+        TIMEOUT: ${{ inputs.timeout }}
+      run: zepp-devkit preview "$PROJECT" "$OUT" --watches "$WATCHES" --label "$LABEL" --color "$QR_COLOR" --timeout "$TIMEOUT" --github

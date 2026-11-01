@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zepp-devkit"
+version = "0.1.0"
+description = "Shared build, test-build and publishing tooling for Zepp OS projects"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = ["pillow>=12", "qrcode>=8"]
+
+[project.scripts]
+zepp-devkit = "zepp_devkit.cli:main"
+
+[tool.setuptools]
+packages = ["zepp_devkit", "zepp_devkit.preview"]
+
+[tool.setuptools.package-data]
+zepp_devkit = ["emu/*.mjs", "emu/*.py"]
+"zepp_devkit.preview" = ["*.sh", "*.cjs"]
