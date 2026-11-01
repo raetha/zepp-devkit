@@ -102,6 +102,10 @@ Projects that would rather not install it can use the actions, pinned to a commi
 - A preview's QR code is valid for 7 days; each upload makes a new one. Install it in the Zepp app: Profile → your watch → Developer Mode → + → Scan.
 - On an iPhone, the Zepp app keeps the phone side (side service and settings page) of the first build it installed for an app ID, through later previews; only reinstalling the Zepp app replaces it. Watch faces have no phone side.
 
+### Updating, and trying devkit changes in a project
+
+Projects pin a release tag (`@v0.1.0`). To update, change the pin in `tools/requirements.txt` (Dependabot may propose it). To try a devkit change before it's released, push it to this repository's `dev` and, on a branch of the project, pin that commit (`@<sha>`); the project's pull request then runs its CI against it. Projects don't follow this repository's `dev` branch directly: a moving reference would change their builds without a commit of their own, and a broken devkit `dev` would break every project at once.
+
 ## The Zepp login
 
 The actions need a Zepp developer login, as three repository secrets (**Settings → Secrets and variables → Actions**) in each repository that uses them: `ZEPP_APPTOKEN`, `ZEPP_USERID`, `ZEPP_CNAME`. One login serves every repository; when it expires, update them all. To get it, from any browser including a phone:

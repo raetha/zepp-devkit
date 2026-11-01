@@ -1,0 +1,39 @@
+name: Release
+
+# On main (one squash-merged pull request per release): when pyproject.toml's version has no
+# `v<version>` tag yet, tag it and publish a GitHub release with that version's changelog
+# section. Projects then pin the tag (zepp-devkit @ git+...@vX.Y.Z), and Dependabot sees it.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Tag and release a new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          pip install -q .
+          version=$(python3 -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "v$version is already released"; exit 0
+          fi
+          zepp-devkit notes CHANGELOG.md "$version" > notes.md
+          gh release create "v$version" --target "$GITHUB_SHA" --title "zepp-devkit $version" --notes-file notes.md

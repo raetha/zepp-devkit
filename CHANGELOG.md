@@ -7,6 +7,8 @@ All notable changes to the Zepp devkit. The format is based on
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-01
+
 ### Added
 
 - `zepp-devkit`, a Python package and command, pinned once in a project's requirements:
