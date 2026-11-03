@@ -12,11 +12,22 @@
 A component's version comes from a Zeus `app.json` (app.version.name, name app.appName) or
 a Home Assistant `manifest.json` (version, name). With "each", every matching app.json is a
 component named after its folder ({dir} is that folder, {name} its name). Tags are
-`<name>-v<version>`; a component whose draft file exists is never released.
+`<name>-v<version>`, or the component's "tag" format (e.g. "v{version}"); a component whose
+draft file exists is never released.
+
+Parts that ship together under one version are one component: its "app" or "manifest" gives
+the version, and "same_version" lists the other version files (app.json or manifest.json),
+which must hold the same version:
+
+    {"components": [
+      {"name": "kestrel", "app": "watch/app.json",
+       "same_version": ["custom_components/kestrel/manifest.json"],
+       "changelog": "CHANGELOG.md", "draft": "DRAFT", "tag": "v{version}", "title": "{app_name} {version}"}
+    ]}
 """
 import fnmatch
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 CONFIG = "zepp-devkit.json"
@@ -30,18 +41,23 @@ class Component:
     changelog: Path
     draft: bool
     title: str
+    tag: str = ""
+    others: dict = field(default_factory=dict)  # same_version: path -> the version it holds
 
-    @property
-    def tag(self):
-        return f"{self.name}-v{self.version}"
+    def __post_init__(self):
+        self.tag = self.tag or f"{self.name}-v{self.version}"
+
+
+def _version(root, path):
+    """-> (version, app name) from a Zeus app.json or a Home Assistant manifest.json."""
+    data = json.loads((root / path).read_text())
+    if "app" in data:  # Zeus app.json
+        return data["app"]["version"]["name"], data["app"]["appName"]
+    return data["version"], data["name"]  # Home Assistant manifest.json
 
 
 def _read(root, spec, path, name=None, folder=None):
-    data = json.loads((root / path).read_text())
-    if "app" in data:  # Zeus app.json
-        version, app_name = data["app"]["version"]["name"], data["app"]["appName"]
-    else:  # Home Assistant manifest.json
-        version, app_name = data["version"], data["name"]
+    version, app_name = _version(root, path)
     name = name or spec["name"]
     fields = {"name": name, "dir": folder or "", "version": version, "app_name": app_name}
     fmt = lambda key, default="": str(spec.get(key, default)).format(**fields)  # noqa: E731
@@ -53,6 +69,8 @@ def _read(root, spec, path, name=None, folder=None):
         changelog=root / fmt("changelog"),
         draft=bool(draft) and (root / draft).exists(),
         title=fmt("title", "{app_name} {version}"),
+        tag=fmt("tag", "{name}-v{version}"),
+        others={p: _version(root, p)[0] for p in spec.get("same_version", [])},
     )
 
 

@@ -124,6 +124,36 @@ def test_release_plan_components_and_notes(tmp_path, monkeypatch):
     assert cli.main(["release-plan"]) == 1  # twisted's missing section fails it
 
 
+def test_release_plan_shared_version_and_dev_mode(tmp_path, monkeypatch):
+    app_json(tmp_path / "watch", name="Kestrel", version="0.2.0")
+    manifest = tmp_path / "custom_components" / "kestrel" / "manifest.json"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text(json.dumps({"name": "Kestrel", "version": "0.2.0"}))
+    (tmp_path / "CHANGELOG.md").write_text("## [Unreleased]\n\n- x\n\n## [0.1.0] - 2026-11-01\n\n- y\n")
+    (tmp_path / project.CONFIG).write_text(json.dumps({"components": [
+        {"name": "kestrel", "app": "watch/app.json", "same_version": ["custom_components/kestrel/manifest.json"],
+         "changelog": "CHANGELOG.md", "tag": "v{version}"},
+    ]}))
+    git(tmp_path, "init", "-q")
+    git(tmp_path, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-q", "--allow-empty", "-m", "x")
+
+    c = project.component("kestrel", tmp_path)
+    assert c.tag == "v0.2.0" and c.title == "Kestrel 0.2.0"
+    # dev holds the expected next version: [Unreleased] is enough there, not for a release
+    assert release.plan(tmp_path, dev=True)[1] == []
+    assert release.plan(tmp_path)[1] == [f"{tmp_path / 'CHANGELOG.md'} needs a '## [0.2.0]' section (the version is 0.2.0)"]
+    (tmp_path / "CHANGELOG.md").write_text("## [0.2.0] - 2026-11-03\n\n- x\n")
+    releases, problems, _ = release.plan(tmp_path)
+    assert problems == [] and releases[0]["tag"] == "v0.2.0"
+
+    manifest.write_text(json.dumps({"name": "Kestrel", "version": "0.1.9"}))
+    assert release.plan(tmp_path, dev=True)[1] == [
+        "custom_components/kestrel/manifest.json has version 0.1.9, but kestrel's version is 0.2.0: they must match"
+    ]
+    monkeypatch.chdir(tmp_path)
+    assert cli.main(["release-plan", "--dev"]) == 1
+
+
 def fake_zab(path):
     """A .zab with two packages: round 480 (Balance 3) and square."""
     def zpk(sources):

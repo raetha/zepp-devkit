@@ -30,7 +30,7 @@ zepp-devkit @ git+https://github.com/raetha/zepp-devkit@<commit or tag>
 zepp-devkit dev-variant <src> <dst> --app-id N --build N [--sha S] [--ignore P ...] [--stamp FILE ...]
 zepp-devkit preview <project> <out> --watches "Amazfit Balance 3,Amazfit Balance 3 Ti" [--label L] [--color C] [--github]
 zepp-devkit preview-check --build-result R [--failed TEXT] [--repositories TEXT]
-zepp-devkit release-plan [--github]
+zepp-devkit release-plan [--dev] [--github]
 zepp-devkit changelog <component|CHANGELOG.md> <version> [--html]
 zepp-devkit notes <component|CHANGELOG.md> <version> [--install FILE] [--test-build N [--intro TEXT]]
 zepp-devkit extract-zpk <dist> <out.zpk> [--device-source N] [--device-zip out.zip]
@@ -46,12 +46,13 @@ Python code can import it too (`from zepp_devkit.changelog import section, to_ht
 
 ```json
 {"components": [
-  {"name": "watch", "app": "watch/app.json", "changelog": "watch/CHANGELOG.md", "draft": "watch/DRAFT", "title": "{app_name} watch app"},
+  {"name": "kestrel", "app": "watch/app.json", "same_version": ["custom_components/kestrel/manifest.json"],
+   "changelog": "CHANGELOG.md", "draft": "DRAFT", "tag": "v{version}", "title": "{app_name} {version}"},
   {"each": "faces/*/app.json", "skip": ["*-dev"], "changelog": "{dir}/CHANGELOG.md", "draft": "{dir}/DRAFT", "title": "{app_name} {version}"}
 ]}
 ```
 
-Tags are `<name>-v<version>`; a component whose draft file exists is never released; every other component's version needs a changelog section, or `release-plan` fails.
+Tags are `<name>-v<version>`, or the component's `tag` format. Parts that ship together under one version (a watch app and its Home Assistant integration) are one component: `same_version` lists the other version files, which must match. A component whose draft file exists is never released. Every other component's version needs a changelog section, or `release-plan` fails; with `--dev` (for a `dev` branch that holds the expected next version) an `[Unreleased]` section is enough, so run it without `--dev` on `main` and on pull requests into `main`.
 
 ### In GitHub Actions
 

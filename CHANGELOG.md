@@ -7,6 +7,17 @@ All notable changes to the Zepp devkit. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-03
+
+### Added
+
+- `release-plan --dev`: on a `dev` branch that holds the expected next version, an `[Unreleased]` changelog section is enough; without `--dev` (on `main` and pull requests into it) the version still needs its own section.
+- Components that ship together under one version: `same_version` in `zepp-devkit.json` lists other version files (Zeus `app.json` or Home Assistant `manifest.json`) that must hold the component's version, and `tag` sets the tag format (for example `v{version}`, one tag and GitHub release for the whole project).
+
+### Internal
+
+- CI hardening: a single `CI passed` check gates releases, and no job keeps the workflow token on disk unless it pushes with git (`persist-credentials: false`).
+
 ## [0.1.0] - 2026-11-01
 
 ### Added
