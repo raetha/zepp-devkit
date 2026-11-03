@@ -1,7 +1,7 @@
 """zepp-devkit: shared tooling for Zepp OS projects. Run from the project's folder.
 
   zepp-devkit dev-variant <src> <dst> --app-id N --build N [--sha S] [--ignore P ...] [--stamp FILE ...]
-  zepp-devkit release-plan [--github]               which components need a release (zepp-devkit.json)
+  zepp-devkit release-plan [--dev] [--github]       which components need a release (zepp-devkit.json)
   zepp-devkit changelog <component|CHANGELOG.md> <version> [--html]
   zepp-devkit notes <component|CHANGELOG.md> <version> [--install FILE] [--test-build N [--intro TEXT]]
   zepp-devkit extract-zpk <dist> <out.zpk> [--device-source N] [--device-zip out.zip]
@@ -52,6 +52,7 @@ def main(argv=None):
 
     p = sub.add_parser("release-plan", help="which components need a release")
     p.add_argument("--github", action="store_true", help="also write releases=<json> to $GITHUB_OUTPUT")
+    p.add_argument("--dev", action="store_true", help="a branch holding the expected next version: [Unreleased] is enough")
 
     p = sub.add_parser("changelog", help="print one version's section")
     p.add_argument("source")
@@ -112,7 +113,7 @@ def main(argv=None):
     elif a.cmd == "release-plan":
         from .release import plan, write_github_output
 
-        releases, problems, lines = plan()
+        releases, problems, lines = plan(dev=a.dev)
         print("\n".join(lines))
         if problems:
             print("\n".join(problems), file=sys.stderr)

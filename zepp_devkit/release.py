@@ -1,8 +1,10 @@
 """Releases from changelogs: which components need one, and their notes.
 
-A component is released when its version has no `<name>-v<version>` git tag. Every
-non-draft component's current version must have a changelog section, so a version bump
-without notes fails CI (also on pull requests).
+A component is released when its version has no tag yet (`<name>-v<version>` unless it sets
+its own format). Every non-draft component's current version must have a changelog section,
+so a version bump without notes fails CI. With `dev`, for a branch that holds the expected
+next version, an `[Unreleased]` section is enough: the release pull request names the
+version's section, and CI on it (and on `main`) runs without `dev`.
 """
 import json
 import os
@@ -13,7 +15,7 @@ from .changelog import section
 from .project import components
 
 
-def plan(root="."):
+def plan(root=".", dev=False):
     """-> (releases, problems, lines): releases as dicts for CI, problems that must fail it."""
     tags = set(subprocess.run(["git", "tag", "-l"], capture_output=True, text=True, cwd=root).stdout.split())
     releases, problems, lines = [], [], []
@@ -21,8 +23,12 @@ def plan(root="."):
         if c.draft:
             lines.append(f"{c.name}: draft, not released")
             continue
-        if section(c.changelog, c.version) is None:
-            problems.append(f"{c.changelog} needs a '## [{c.version}]' section (the version is {c.version})")
+        for path, version in c.others.items():
+            if version != c.version:
+                problems.append(f"{path} has version {version}, but {c.name}'s version is {c.version}: they must match")
+        if section(c.changelog, c.version) is None and not (dev and section(c.changelog, "Unreleased") is not None):
+            wanted = f"'## [{c.version}]'" + (" or '## [Unreleased]'" if dev else "")
+            problems.append(f"{c.changelog} needs a {wanted} section (the version is {c.version})")
         new = c.tag not in tags
         if new:
             releases.append({"component": c.name, "version": c.version, "tag": c.tag, "title": c.title})
