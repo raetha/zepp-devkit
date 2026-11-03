@@ -102,14 +102,14 @@ def test_release_plan_components_and_notes(tmp_path, monkeypatch):
     releases, problems, lines = release.plan(tmp_path)
     # twisted's 2.0.0 has no changelog section: that's a problem; sextant is already tagged; ha is a draft
     assert [r["component"] for r in releases] == ["watch", "twisted"]
-    assert releases[0] == {"component": "watch", "version": "1.1.0", "tag": "watch-v1.1.0", "title": "Kestrel watch app"}
+    assert releases[0] == {"component": "watch", "version": "1.1.0", "tag": "watch-1.1.0", "title": "Kestrel watch app"}
     assert problems == [f"{tmp_path / 'faces/twisted/CHANGELOG.md'} needs a '## [2.0.0]' section (the version is 2.0.0)"]
     assert "ha: draft, not released" in lines
 
     out = tmp_path / "out"
     monkeypatch.setenv("GITHUB_OUTPUT", str(out))
     release.write_github_output(releases)
-    assert json.loads(out.read_text().split("=", 1)[1])[0]["tag"] == "watch-v1.1.0"
+    assert json.loads(out.read_text().split("=", 1)[1])[0]["tag"] == "watch-1.1.0"
 
     cl = tmp_path / "watch" / "CHANGELOG.md"
     assert release.notes(cl, "1.0.0", "**Install** it.") == "- First.\n\n---\n\n**Install** it."
@@ -132,19 +132,21 @@ def test_release_plan_shared_version_and_dev_mode(tmp_path, monkeypatch):
     (tmp_path / "CHANGELOG.md").write_text("## [Unreleased]\n\n- x\n\n## [0.1.0] - 2026-11-01\n\n- y\n")
     (tmp_path / project.CONFIG).write_text(json.dumps({"components": [
         {"name": "kestrel", "app": "watch/app.json", "same_version": ["custom_components/kestrel/manifest.json"],
-         "changelog": "CHANGELOG.md", "tag": "v{version}"},
+         "changelog": "CHANGELOG.md", "tag": "{version}"},
     ]}))
     git(tmp_path, "init", "-q")
     git(tmp_path, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-q", "--allow-empty", "-m", "x")
 
     c = project.component("kestrel", tmp_path)
-    assert c.tag == "v0.2.0" and c.title == "Kestrel 0.2.0"
+    assert c.tag == "0.2.0" and c.legacy_tag == "v0.2.0" and c.title == "Kestrel 0.2.0"
     # dev holds the expected next version: [Unreleased] is enough there, not for a release
     assert release.plan(tmp_path, dev=True)[1] == []
     assert release.plan(tmp_path)[1] == [f"{tmp_path / 'CHANGELOG.md'} needs a '## [0.2.0]' section (the version is 0.2.0)"]
     (tmp_path / "CHANGELOG.md").write_text("## [0.2.0] - 2026-11-03\n\n- x\n")
     releases, problems, _ = release.plan(tmp_path)
-    assert problems == [] and releases[0]["tag"] == "v0.2.0"
+    assert problems == [] and releases[0]["tag"] == "0.2.0"
+    git(tmp_path, "tag", "v0.2.0")  # released under the older tag form: not released again
+    assert release.plan(tmp_path)[0] == []
 
     manifest.write_text(json.dumps({"name": "Kestrel", "version": "0.1.9"}))
     assert release.plan(tmp_path, dev=True)[1] == [

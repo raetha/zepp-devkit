@@ -52,7 +52,7 @@ Python code can import it too (`from zepp_devkit.changelog import section, to_ht
 ]}
 ```
 
-Tags are `<name>-v<version>`, or the component's `tag` format. Parts that ship together under one version (a watch app and its Home Assistant integration) are one component: `same_version` lists the other version files, which must match. A component whose draft file exists is never released. Every other component's version needs a changelog section, or `release-plan` fails; with `--dev` (for a `dev` branch that holds the expected next version) an `[Unreleased]` section is enough, so run it without `--dev` on `main` and on pull requests into `main`.
+Tags are `<name>-<version>`, or the component's `tag` format; a version that has the older tag with a "v" before the version (`<name>-v<version>`) counts as released too. Parts that ship together under one version (a watch app and its Home Assistant integration) are one component: `same_version` lists the other version files, which must match. A component whose draft file exists is never released. Every other component's version needs a changelog section, or `release-plan` fails; with `--dev` (for a `dev` branch that holds the expected next version) an `[Unreleased]` section is enough, so run it without `--dev` on `main` and on pull requests into `main`.
 
 ### In GitHub Actions
 
@@ -105,7 +105,7 @@ Projects that would rather not install it can use the actions, pinned to a commi
 
 ### Updating, and trying devkit changes in a project
 
-Projects pin a release tag (`@v0.1.0`). To update, change the pin in `tools/requirements.txt` (Dependabot may propose it). To try a devkit change before it's released, push it to this repository's `dev` and, on a branch of the project, pin that commit (`@<sha>`); the project's pull request then runs its CI against it. Projects don't follow this repository's `dev` branch directly: a moving reference would change their builds without a commit of their own, and a broken devkit `dev` would break every project at once.
+Projects pin a release tag (`@0.3.0`; releases up to 0.2.0 are tagged `v0.2.0`). To update, change the pin in `tools/requirements.txt` (Dependabot may propose it). To try a devkit change before it's released, push it to this repository's `dev` and, on a branch of the project, pin that commit (`@<sha>`); the project's pull request then runs its CI against it. Projects don't follow this repository's `dev` branch directly: a moving reference would change their builds without a commit of their own, and a broken devkit `dev` would break every project at once.
 
 ## The Zepp login
 
