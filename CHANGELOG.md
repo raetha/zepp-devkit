@@ -7,6 +7,10 @@ All notable changes to the Zepp devkit. The format is based on
 
 ## [Unreleased]
 
+### Internal
+
+- CI hardening: a single `CI passed` check gates releases, and no job keeps the workflow token on disk unless it pushes with git (`persist-credentials: false`).
+
 ## [0.1.0] - 2026-11-01
 
 ### Added
