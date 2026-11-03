@@ -17,4 +17,4 @@ How projects use it: one pin in `tools/requirements.txt` (`zepp-devkit @ git+htt
 
 Later candidates: Kestrel's model sweep (`tools/compat/`, run the app on every watch model's emulator image) and the faces' screenshot tooling, once a second project needs them.
 
-Each step: build it here with tests, release (`vX.Y.Z`), switch Kestrel (from this session's repo access) and give the owner a prompt for the faces, update both projects' docs to point here, then delete their copies.
+Each step: build it here with tests, release (`X.Y.Z`), switch Kestrel (from this session's repo access) and give the owner a prompt for the faces, update both projects' docs to point here, then delete their copies.

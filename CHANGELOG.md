@@ -3,9 +3,13 @@
 All notable changes to the Zepp devkit. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/). Projects pin a commit of a release
-(`uses: raetha/zepp-devkit/preview@<sha> # vX.Y.Z`), and Dependabot proposes updates.
+(`uses: raetha/zepp-devkit/preview@<sha> # X.Y.Z`), and Dependabot proposes updates.
 
 ## [Unreleased]
+
+### Changed
+
+- Release tags no longer start with "v": a component's default tag is `<name>-<version>` (was `<name>-v<version>`), and this package's own releases are tagged `X.Y.Z` (pin `@0.3.0`, not `@v0.3.0`). A version that already has the older `v` tag counts as released, so nothing is released twice; a project with its own `tag` format gets the same check for that format with a "v" before the version.
 
 ## [0.2.0] - 2026-11-03
 

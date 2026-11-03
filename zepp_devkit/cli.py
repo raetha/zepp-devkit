@@ -133,7 +133,7 @@ def main(argv=None):
 
         install = ""
         if a.install:
-            fields = {"version": a.version, "name": a.source, "tag": f"{a.source}-v{a.version}"}
+            fields = {"version": a.version, "name": a.source, "tag": f"{a.source}-{a.version}"}
             install = Path(a.install).read_text().format(**fields)
         print(notes(_changelog_path(a.source), a.version, install, a.test_build, a.intro))
     elif a.cmd == "extract-zpk":

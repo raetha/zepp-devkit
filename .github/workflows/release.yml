@@ -1,8 +1,9 @@
 name: Release
 
 # On main (one squash-merged pull request per release): when pyproject.toml's version has no
-# `v<version>` tag yet, tag it and publish a GitHub release with that version's changelog
-# section. Projects then pin the tag (zepp-devkit @ git+...@vX.Y.Z). Then reset dev to main
+# `<version>` tag yet (or `v<version>`, as releases up to 0.2.0 were tagged), tag it and publish
+# a GitHub release with that version's changelog section. Projects then pin the tag
+# (zepp-devkit @ git+...@X.Y.Z). Then reset dev to main
 # (sync-dev), as zepp-kestrel and zepp-watch-faces do.
 
 on:
@@ -34,11 +35,13 @@ jobs:
           set -e
           pip install -q .
           version=$(python3 -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
-          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
-            echo "v$version is already released"; exit 0
+          # no leading "v" (releases up to 0.2.0 have one)
+          if git rev-parse -q --verify "refs/tags/$version" >/dev/null ||
+             git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "$version is already released"; exit 0
           fi
           zepp-devkit notes CHANGELOG.md "$version" > notes.md
-          gh release create "v$version" --target "$GITHUB_SHA" --title "zepp-devkit $version" --notes-file notes.md
+          gh release create "$version" --target "$GITHUB_SHA" --title "zepp-devkit $version" --notes-file notes.md
 
   # After a release pull request is merged, dev holds the same files as main but different
   # commits; reset it to main so the next cycle starts clean. Skipped if dev has new work.

@@ -12,8 +12,10 @@
 A component's version comes from a Zeus `app.json` (app.version.name, name app.appName) or
 a Home Assistant `manifest.json` (version, name). With "each", every matching app.json is a
 component named after its folder ({dir} is that folder, {name} its name). Tags are
-`<name>-v<version>`, or the component's "tag" format (e.g. "v{version}"); a component whose
-draft file exists is never released.
+`<name>-<version>`, or the component's "tag" format (e.g. "{version}"). A version also counts
+as released when it has the older tag with a "v" before the version (`<name>-v<version>`,
+`v<version>`), so projects that tagged that way don't release a version twice. A component
+whose draft file exists is never released.
 
 Parts that ship together under one version are one component: its "app" or "manifest" gives
 the version, and "same_version" lists the other version files (app.json or manifest.json),
@@ -22,7 +24,7 @@ which must hold the same version:
     {"components": [
       {"name": "kestrel", "app": "watch/app.json",
        "same_version": ["custom_components/kestrel/manifest.json"],
-       "changelog": "CHANGELOG.md", "draft": "DRAFT", "tag": "v{version}", "title": "{app_name} {version}"}
+       "changelog": "CHANGELOG.md", "draft": "DRAFT", "tag": "{version}", "title": "{app_name} {version}"}
     ]}
 """
 import fnmatch
@@ -43,9 +45,11 @@ class Component:
     title: str
     tag: str = ""
     others: dict = field(default_factory=dict)  # same_version: path -> the version it holds
+    legacy_tag: str = ""  # the tag with a "v" before the version, as earlier releases were tagged
 
     def __post_init__(self):
-        self.tag = self.tag or f"{self.name}-v{self.version}"
+        self.tag = self.tag or f"{self.name}-{self.version}"
+        self.legacy_tag = self.legacy_tag or f"{self.name}-v{self.version}"
 
 
 def _version(root, path):
@@ -69,7 +73,8 @@ def _read(root, spec, path, name=None, folder=None):
         changelog=root / fmt("changelog"),
         draft=bool(draft) and (root / draft).exists(),
         title=fmt("title", "{app_name} {version}"),
-        tag=fmt("tag", "{name}-v{version}"),
+        tag=fmt("tag", "{name}-{version}"),
+        legacy_tag=str(spec.get("tag", "{name}-{version}")).replace("{version}", "v{version}").format(**fields),
         others={p: _version(root, p)[0] for p in spec.get("same_version", [])},
     )
 
