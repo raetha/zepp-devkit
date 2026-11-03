@@ -7,6 +7,8 @@ All notable changes to the Zepp devkit. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-03
+
 ### Added
 
 - `release-plan --dev`: on a `dev` branch that holds the expected next version, an `[Unreleased]` changelog section is enough; without `--dev` (on `main` and pull requests into it) the version still needs its own section.
